@@ -1,4 +1,8 @@
 # Skill Swap Platform
+Team Name : Tech buddies
+Team Members :
+Abhani OM - omabhani268@gmail.com
+Gajjar Dhrumil - gajjardhrumil264@gmail.com
 
 A full-stack MERN application that enables users to list their skills and request skill swaps with other users.
 
