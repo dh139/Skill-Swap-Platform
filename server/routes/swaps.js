@@ -3,6 +3,8 @@ import { body, validationResult } from "express-validator"
 import Swap from "../models/Swap.js"
 import User from "../models/User.js"
 import { authenticate } from "../middleware/auth.js"
+import { sendSwapNotificationEmail } from "../utils/mailer.js"
+import { sendSwapAcceptedEmail, sendSwapRejectedEmail } from "../utils/mailer.js"
 
 const router = express.Router()
 
@@ -34,7 +36,7 @@ router.post(
         return res.status(400).json({ message: "Cannot request swap with yourself" })
       }
 
-      // Check if there's already a pending request between these users
+      // Check for existing pending swap
       const existingRequest = await Swap.findOne({
         $or: [
           { requester: req.user._id, target: targetUserId, status: "pending" },
@@ -43,9 +45,12 @@ router.post(
       })
 
       if (existingRequest) {
-        return res.status(400).json({ message: "There is already a pending request between you and this user" })
+        return res
+          .status(400)
+          .json({ message: "There is already a pending request between you and this user" })
       }
 
+      // Create new swap
       const swap = new Swap({
         requester: req.user._id,
         target: targetUserId,
@@ -57,15 +62,27 @@ router.post(
       await swap.save()
       await swap.populate(["requester", "target"], "name email")
 
+      // Try sending email notification
+      try {
+        await sendSwapNotificationEmail({
+          to: swap.target.email,
+          targetName: swap.target.name,
+          senderName: swap.requester.name,
+        })
+        console.log(`📧 Email sent to ${swap.target.email} for swap request.`)
+      } catch (emailErr) {
+        console.error(`❌ Failed to send email to ${swap.target.email}:`, emailErr)
+      }
+
       res.status(201).json({
         message: "Swap request sent successfully",
         swap,
       })
     } catch (error) {
-      console.error("Error creating swap request:", error)
+      console.error("🔥 Error creating swap request:", error)
       res.status(500).json({ message: "Server error" })
     }
-  },
+  }
 )
 
 // Get user's swap requests
@@ -86,13 +103,13 @@ router.get("/my-requests", authenticate, async (req, res) => {
 // Accept swap request
 router.put("/:id/accept", authenticate, async (req, res) => {
   try {
-    const swap = await Swap.findById(req.params.id)
+    const swap = await Swap.findById(req.params.id).populate(["requester", "target"], "name email")
 
     if (!swap) {
       return res.status(404).json({ message: "Swap request not found" })
     }
 
-    if (swap.target.toString() !== req.user._id.toString()) {
+    if (swap.target._id.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: "Not authorized to accept this request" })
     }
 
@@ -102,6 +119,17 @@ router.put("/:id/accept", authenticate, async (req, res) => {
 
     swap.status = "accepted"
     await swap.save()
+
+    try {
+      await sendSwapAcceptedEmail({
+        to: swap.requester.email,
+        senderName: swap.requester.name,
+        targetName: swap.target.name,
+      })
+      console.log(`📧 Swap ACCEPT email sent to ${swap.requester.email}`)
+    } catch (emailErr) {
+      console.error(`❌ Failed to send accept email:`, emailErr)
+    }
 
     res.json({ message: "Swap request accepted", swap })
   } catch (error) {
@@ -113,13 +141,13 @@ router.put("/:id/accept", authenticate, async (req, res) => {
 // Reject swap request
 router.put("/:id/reject", authenticate, async (req, res) => {
   try {
-    const swap = await Swap.findById(req.params.id)
+    const swap = await Swap.findById(req.params.id).populate(["requester", "target"], "name email")
 
     if (!swap) {
       return res.status(404).json({ message: "Swap request not found" })
     }
 
-    if (swap.target.toString() !== req.user._id.toString()) {
+    if (swap.target._id.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: "Not authorized to reject this request" })
     }
 
@@ -129,6 +157,17 @@ router.put("/:id/reject", authenticate, async (req, res) => {
 
     swap.status = "rejected"
     await swap.save()
+
+    try {
+      await sendSwapRejectedEmail({
+        to: swap.requester.email,
+        senderName: swap.requester.name,
+        targetName: swap.target.name,
+      })
+      console.log(`📧 Swap REJECT email sent to ${swap.requester.email}`)
+    } catch (emailErr) {
+      console.error(`❌ Failed to send reject email:`, emailErr)
+    }
 
     res.json({ message: "Swap request rejected", swap })
   } catch (error) {

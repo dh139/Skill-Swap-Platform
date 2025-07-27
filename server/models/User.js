@@ -1,3 +1,4 @@
+
 import mongoose from "mongoose"
 import bcrypt from "bcryptjs"
 
@@ -19,6 +20,12 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       minlength: 6,
+    },
+    mobileNumber: {
+      type: String,
+      trim: true,
+      match: [/^\+?[1-9]\d{1,14}$/, "Please enter a valid mobile number"], // E.164 format or similar
+      default: "",
     },
     location: {
       type: String,
@@ -80,7 +87,6 @@ const userSchema = new mongoose.Schema(
 
 // Hash password before saving
 userSchema.pre("save", async function (next) {
-  // Only hash the password if it has been modified (or is new)
   if (!this.isModified("password")) return next()
 
   try {
@@ -98,10 +104,7 @@ userSchema.pre("save", async function (next) {
 // Compare password method
 userSchema.methods.comparePassword = async function (candidatePassword) {
   try {
-
-
     const result = await bcrypt.compare(candidatePassword, this.password)
- 
     return result
   } catch (error) {
     console.error("❌ Password comparison error:", error)

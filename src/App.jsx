@@ -34,6 +34,8 @@ function App() {
             <Route path="/swap-requests" element={user ? <SwapRequests /> : <Navigate to="/login" />} />
             <Route path="/admin" element={user?.role === "admin" ? <AdminPanel /> : <Navigate to="/dashboard" />} />
             <Route path="/user/:id" element={user ? <UserProfile /> : <Navigate to="/login" />} />
+         
+
           </Routes>
         </main>
       </div>

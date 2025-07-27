@@ -4,6 +4,8 @@ import { body, validationResult } from "express-validator"
 import User from "../models/User.js"
 import { authenticate } from "../middleware/auth.js"
 import dotenv from 'dotenv';
+
+import { sendOTPEmail } from "../utils/mailer.js" // Assuming email functions are in utils/email.js
 dotenv.config();
 const router = express.Router()
 
@@ -144,5 +146,125 @@ router.get("/me", authenticate, async (req, res) => {
     res.status(500).json({ message: "Server error" })
   }
 })
+
+
+
+// In-memory OTP storage (for simplicity; use Redis or a database in production)
+const otpStorage = new Map()
+
+// Generate a 6-digit OTP
+const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString()
+}
+
+// Forgot Password - Send OTP
+router.post(
+  "/forgot-password",
+  [body("email").isEmail().withMessage("Please provide a valid email")],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req)
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ message: errors.array()[0].msg })
+      }
+
+      const { email } = req.body
+      const user = await User.findOne({ email })
+      if (!user) {
+        return res.status(404).json({ message: "User not found" })
+      }
+
+      // Generate OTP and store it with expiration (5 minutes)
+      const otp = generateOTP()
+      otpStorage.set(email, { otp, expires: Date.now() + 5 * 60 * 1000 })
+
+      // Send OTP email
+      await sendOTPEmail({ to: email, otp, name: user.name })
+      res.json({ message: "OTP sent to your email" })
+    } catch (error) {
+      console.error("Error sending OTP:", error)
+      res.status(500).json({ message: "Server error" })
+    }
+  },
+)
+
+// Verify OTP
+router.post(
+  "/verify-otp",
+  [
+    body("email").isEmail().withMessage("Please provide a valid email"),
+    body("otp").isLength({ min: 6, max: 6 }).withMessage("OTP must be 6 digits"),
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req)
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ message: errors.array()[0].msg })
+      }
+
+      const { email, otp } = req.body
+      const storedOTP = otpStorage.get(email)
+
+      if (!storedOTP || storedOTP.expires < Date.now()) {
+        return res.status(400).json({ message: "OTP expired or invalid" })
+      }
+
+      if (storedOTP.otp !== otp) {
+        return res.status(400).json({ message: "Invalid OTP" })
+      }
+
+      res.json({ message: "OTP verified successfully" })
+    } catch (error) {
+      console.error("Error verifying OTP:", error)
+      res.status(500).json({ message: "Server error" })
+    }
+  },
+)
+
+// Reset Password
+router.post(
+  "/reset-password",
+  [
+    body("email").isEmail().withMessage("Please provide a valid email"),
+    body("otp").isLength({ min: 6, max: 6 }).withMessage("OTP must be 6 digits"),
+    body("newPassword").isLength({ min: 6 }).withMessage("Password must be at least 6 characters"),
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req)
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ message: errors.array()[0].msg })
+      }
+
+      const { email, otp, newPassword } = req.body
+      const storedOTP = otpStorage.get(email)
+
+      if (!storedOTP || storedOTP.expires < Date.now()) {
+        return res.status(400).json({ message: "OTP expired or invalid" })
+      }
+
+      if (storedOTP.otp !== otp) {
+        return res.status(400).json({ message: "Invalid OTP" })
+      }
+
+      const user = await User.findOne({ email })
+      if (!user) {
+        return res.status(404).json({ message: "User not found" })
+      }
+
+      // Update password
+      user.password = newPassword // Password hashing is handled by UserSchema.pre("save")
+      await user.save()
+
+      // Clear OTP
+      otpStorage.delete(email)
+
+      res.json({ message: "Password reset successfully" })
+    } catch (error) {
+      console.error("Error resetting password:", error)
+      res.status(500).json({ message: "Server error" })
+    }
+  },
+)
 
 export default router

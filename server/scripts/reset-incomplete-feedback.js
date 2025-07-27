@@ -1,7 +1,7 @@
 import mongoose from "mongoose"
 import Swap from "../models/Swap.js"
 import dotenv from "dotenv"
-
+import bcrypt from 'bcryptjs'; // or 'bcrypt'
 dotenv.config()
 
 async function resetIncompleteFeedback() {

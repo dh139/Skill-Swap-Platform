@@ -1,67 +1,73 @@
-import mongoose from "mongoose"
+import mongoose from "mongoose";
 
-const swapSchema = new mongoose.Schema(
-  {
-    requester: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
+const swapSchema = new mongoose.Schema({
+  requester: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  target: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  message: {
+    type: String,
+    maxlength: 500,
+  },
+  status: {
+    type: String,
+    enum: ["pending", "accepted", "rejected", "completed", "cancelled"],
+    default: "pending",
+  },
+  skillsRequested: [
+    {
+      type: String,
+      trim: true,
     },
-    target: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
+  ],
+  skillsOffered: [
+    {
+      type: String,
+      trim: true,
     },
-    message: {
+  ],
+  scheduledDate: {
+    type: Date,
+  },
+  completedDate: {
+    type: Date,
+  },
+  feedback: {
+    rating: {
+      type: Number,
+      min: 1,
+      max: 5,
+    },
+    comment: {
       type: String,
       maxlength: 500,
     },
-    status: {
-      type: String,
-      enum: ["pending", "accepted", "rejected", "completed", "cancelled"],
-      default: "pending",
+    reviewer: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
     },
-    skillsRequested: [
-      {
-        type: String,
-        trim: true,
-      },
-    ],
-    skillsOffered: [
-      {
-        type: String,
-        trim: true,
-      },
-    ],
-    scheduledDate: {
+    createdAt: {
       type: Date,
-    },
-    completedDate: {
-      type: Date,
-    },
-    feedback: {
-      rating: {
-        type: Number,
-        min: 1,
-        max: 5,
-      },
-      comment: {
-        type: String,
-        maxlength: 500,
-      },
-      reviewer: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-      createdAt: {
-        type: Date,
-        default: Date.now,
-      },
+      default: Date.now,
     },
   },
-  {
-    timestamps: true,
+  acceptedAt: {
+    type: Date,
   },
-)
+  rejectedAt: {
+    type: Date,
+  },
+}, {
+  timestamps: true,
+});
 
-export default mongoose.model("Swap", swapSchema)
+// Enforce one active swap between same users at a time
+swapSchema.index({ requester: 1, target: 1 }, { unique: false });
+
+export default mongoose.model("Swap", swapSchema);

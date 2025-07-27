@@ -2,13 +2,14 @@ import express from "express"
 import mongoose from "mongoose"
 import cors from "cors"
 import dotenv from "dotenv"
-
+import messageRoutes from "./routes/messages.js"
 // Import routes
 import authRoutes from "./routes/auth.js"
 import userRoutes from "./routes/users.js"
 import swapRoutes from "./routes/swaps.js"
 import adminRoutes from "./routes/admin.js"
-import messageRoutes from "./routes/messages.js"
+import platformMessageRoutes from "./routes/platformMessages.js"
+
 
 dotenv.config()
 
@@ -26,12 +27,14 @@ app.use("/api/users", userRoutes)
 app.use("/api/swaps", swapRoutes)
 app.use("/api/admin", adminRoutes)
 app.use("/api/messages", messageRoutes)
-
+app.use("/api/platform-messages", platformMessageRoutes)
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack)
   res.status(500).json({ message: "Something went wrong!" })
 })
+
+
 
 // Connect to MongoDB
 mongoose

@@ -54,19 +54,24 @@ const FeedbackModal = ({ swap, isOpen, onClose, onSubmit }) => {
   const ratingLabels = ["Poor", "Fair", "Good", "Very Good", "Excellent"]
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4 animate-fade-in">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold text-gray-800">Rate Your Experience</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600" aria-label="Close modal">
-            <X size={20} />
-          </button>
-        </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm px-4">
+      <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl p-6 relative animate-fade-in-up">
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 focus:outline-none"
+          aria-label="Close modal"
+        >
+          <X size={20} />
+        </button>
 
-        <p className="text-gray-600 mb-4">
+        {/* Heading */}
+        <h3 className="text-2xl font-semibold text-gray-900 mb-2">Rate Your Experience</h3>
+        <p className="text-gray-600 mb-6">
           How was your skill swap with <span className="font-medium">{otherUserName}</span>?
         </p>
 
+        {/* Feedback Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Rating */}
           <div>
@@ -88,7 +93,7 @@ const FeedbackModal = ({ swap, isOpen, onClose, onSubmit }) => {
               id="feedback-comment"
               value={feedback.comment}
               onChange={(e) => setFeedback({ ...feedback, comment: e.target.value })}
-              className="w-full border border-gray-300 rounded-md p-3 text-sm focus:ring-blue-500 focus:border-blue-500 resize-none"
+              className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
               rows="4"
               placeholder="Share your experience with this skill swap..."
               maxLength={500}
@@ -97,18 +102,18 @@ const FeedbackModal = ({ swap, isOpen, onClose, onSubmit }) => {
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-2">
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <button
               type="submit"
               disabled={loading}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md flex-1 transition-colors disabled:opacity-50"
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium py-2 px-4 rounded-md w-full sm:w-auto transition disabled:opacity-50"
             >
               {loading ? "Submitting..." : "Submit Feedback"}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-md flex-1 transition-colors"
+              className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-md w-full sm:w-auto transition"
             >
               Cancel
             </button>
