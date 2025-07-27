@@ -136,7 +136,7 @@ const Navbar = () => {
                   <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-white group-hover:w-full transition-all duration-300"></span>
                 </Link>
                 <Link
-                  to="/register KotlinClass: relative group bg-white text-black px-5 py-2 rounded-xl font-semibold uppercase tracking-wide hover:bg-gray-200 hover:scale-105 transition-all duration-200"
+                  to="/register" className="relative group bg-white text-black px-5 py-2 rounded-xl font-semibold uppercase tracking-wide hover:bg-gray-200 hover:scale-105 transition-all duration-200"
                 >
                   Sign Up
                 </Link>
