@@ -53,10 +53,22 @@ const Browse = () => {
   const fetchUsers = async () => {
     try {
       const response = await api.get("/users/browse")
-      setUsers(response.data)
-      console.log("Users data:", response.data) // Debug log to check email field
+      console.log("Full API response:", response.data) // Debug log
+      
+      // Fix: Check if response.data has a users array, otherwise use response.data directly
+      const usersData = response.data.users || response.data
+      
+      // Ensure usersData is an array
+      if (Array.isArray(usersData)) {
+        setUsers(usersData)
+        console.log("Users data set:", usersData) // Debug log
+      } else {
+        console.error("Users data is not an array:", usersData)
+        setUsers([])
+      }
     } catch (error) {
       console.error("Error fetching users:", error)
+      setUsers([]) // Set empty array on error
     } finally {
       setLoading(false)
     }
@@ -69,7 +81,7 @@ const Browse = () => {
       const searchLower = searchTerm.toLowerCase()
       filtered = filtered.filter((user) => {
         return (
-          user.name.toLowerCase().includes(searchLower) ||
+          user.name?.toLowerCase().includes(searchLower) ||
           user.email?.toLowerCase().includes(searchLower) ||
           user.location?.toLowerCase().includes(searchLower) ||
           user.skillsOffered?.some((skill) => skill.toLowerCase().includes(searchLower)) ||
@@ -187,25 +199,24 @@ const Browse = () => {
         {/* Card Header with Avatar */}
         <div className="relative p-8 pb-4">
           {/* Top-right rating badge */}
-       {/* Top-right rating badge */}
-{user.averageRating > 0 ? (
-  <div className="absolute top-6 right-6 flex items-center space-x-1 bg-black text-white px-3 py-1.5 rounded-full text-sm font-medium">
-    <Star size={14} className="fill-current text-yellow-400" />
-    <span>{user.averageRating.toFixed(1)}</span>
-  </div>
-) : (
-  <div className="absolute top-6 right-6 flex items-center space-x-1 bg-gray-200 text-gray-600 px-3 py-1.5 rounded-full text-sm font-medium">
-    <Star size={14} className="text-gray-400" />
-    <span>No Ratings</span>
-  </div>
-)}
+          {(user.averageRating || 0) > 0 ? (
+            <div className="absolute top-6 right-6 flex items-center space-x-1 bg-black text-white px-3 py-1.5 rounded-full text-sm font-medium">
+              <Star size={14} className="fill-current text-yellow-400" />
+              <span>{user.averageRating.toFixed(1)}</span>
+            </div>
+          ) : (
+            <div className="absolute top-6 right-6 flex items-center space-x-1 bg-gray-200 text-gray-600 px-3 py-1.5 rounded-full text-sm font-medium">
+              <Star size={14} className="text-gray-400" />
+              <span>No Ratings</span>
+            </div>
+          )}
           
           {/* Avatar and Basic Info */}
           <div className="flex items-start space-x-4">
             <div className="relative">
               <div className="w-20 h-20 bg-gradient-to-br from-black to-gray-800 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-300">
                 <span className="text-white font-bold text-2xl">
-                  {user.name.charAt(0).toUpperCase()}
+                  {user.name?.charAt(0).toUpperCase() || 'U'}
                 </span>
               </div>
               {user.availability && (
@@ -215,7 +226,7 @@ const Browse = () => {
             
             <div className="flex-1 min-w-0">
               <h3 className="text-xl font-bold text-gray-900 group-hover/link:text-black truncate">
-                {user.name}
+                {user.name || 'Unknown User'}
               </h3>
               
               {/* Email - Fixed with better display logic */}

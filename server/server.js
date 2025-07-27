@@ -28,6 +28,7 @@ app.use("/api/swaps", swapRoutes)
 app.use("/api/admin", adminRoutes)
 app.use("/api/messages", messageRoutes)
 app.use("/api/platform-messages", platformMessageRoutes)
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack)
